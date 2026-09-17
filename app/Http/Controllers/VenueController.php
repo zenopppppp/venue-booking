@@ -43,6 +43,7 @@ class VenueController extends Controller
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
             'location'      => 'required|string|max:255',
+            'city'          => 'nullable|string|max:255',
             'price_per_day' => 'required|numeric|min:0',
             'capacity'      => 'required|integer|min:1',
             'description'   => 'nullable|string',
@@ -58,12 +59,32 @@ class VenueController extends Controller
         return redirect()->route('venues.index')
             ->with('success', 'Venue added successfully!');
     }
-
-    public function catalog()
+    public function catalog(Request $request)
     {
-        $venues = Venue::latest()->paginate(9);
+        $query = Venue::query();
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('city')) {
+            // Search in BOTH location and city (case-insensitive)
+            $query->where(function ($q) use ($request) {
+                $q->where('location', 'ILIKE', '%' . $request->city . '%')
+                    ->orWhere('city', 'ILIKE', '%' . $request->city . '%');
+            });
+        }
+
+        if ($request->filled('max_price')) {
+            $query->where('price_per_day', '<=', $request->max_price);
+        }
+
+        $venues = $query->latest()->paginate(9)->withQueryString();
+
         return view('venues.catalog', compact('venues'));
     }
+
+
 
     public function edit(Venue $venue)
     {
@@ -82,6 +103,7 @@ class VenueController extends Controller
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
             'location'      => 'required|string|max:255',
+            'city'          => 'nullable|string|max:255',
             'price_per_day' => 'required|numeric|min:0',
             'capacity'      => 'required|integer|min:1',
             'description'   => 'nullable|string',

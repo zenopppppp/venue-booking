@@ -7,6 +7,58 @@
     </x-slot>
 
     <div class="py-12">
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
+            <form action="{{ route('venues.catalog') }}" method="GET"
+                class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Search Venue
+                    </label>
+                    <input type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="e.g. Grand Hall"
+                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        City / Location
+                    </label>
+                    <input type="text"
+                        name="city"
+                        value="{{ request('city') }}"
+                        placeholder="e.g. Delhi"
+                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Max Price / Day (₹)
+                    </label>
+                    <input type="number"
+                        name="max_price"
+                        value="{{ request('max_price') }}"
+                        placeholder="e.g. 5000"
+                        min="0"
+                        step="100"
+                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                </div>
+
+                <div class="flex items-end gap-2">
+                    <button type="submit"
+                        class="w-full inline-flex justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition ease-in-out duration-150">
+                        Search
+                    </button>
+
+                    <a href="{{ route('venues.catalog') }}"
+                        class="inline-flex justify-center items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 transition ease-in-out duration-150">
+                        Reset
+                    </a>
+                </div>
+            </form>
+        </div>
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
