@@ -2,16 +2,33 @@ FROM php:8.2-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git curl unzip zip \
-    libpng-dev libjpeg-dev libfreetype6-dev \
-    libonig-dev libxml2-dev libpq-dev libzip-dev libicu-dev \
+    git \
+    curl \
+    unzip \
+    zip \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    libpq-dev \
+    libzip-dev \
+    libicu-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
+# Configure and install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        pdo pdo_pgsql pdo_mysql \
-        mbstring exif pcntl bcmath gd zip intl
+    && docker-php-ext-install -j$(nproc) \
+        pdo \
+        pdo_pgsql \
+        pdo_mysql \
+        mbstring \
+        exif \
+        pcntl \
+        bcmath \
+        gd \
+        zip \
+        intl
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -31,7 +48,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 
 WORKDIR /var/www/html
 
-# Install PHP dependencies first (better layer caching)
+# Install PHP dependencies first
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
@@ -42,7 +59,7 @@ RUN npm ci
 # Copy the rest of the application
 COPY . .
 
-# Finish Composer scripts & build assets
+# Build assets and optimize
 RUN composer dump-autoload --optimize \
     && npm run build \
     && php artisan config:cache \
