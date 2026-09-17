@@ -43,7 +43,7 @@
                     </div>
 
                     <!-- Booking Form (logged-in users only) -->
-                    @auth
+                    @if (auth()->check() && auth()->user()->role === 'customer')
                     <form class="booking-form mt-4 border-t pt-4" data-venue-id="{{ $venue->id }}">
                         @csrf
 
@@ -66,6 +66,16 @@
                         <div class="error-box hidden mt-3 p-2 bg-red-100 border border-red-400 text-red-700 text-xs rounded-md"></div>
                         <div class="success-box hidden mt-3 p-2 bg-green-100 border border-green-400 text-green-700 text-xs rounded-md"></div>
                     </form>
+
+                    @elseif (auth()->check() && auth()->user()->role === 'vendor')
+                    <div class="mt-4 border-t pt-4 text-center">
+                        <p class="text-xs text-gray-500 mb-2">You're a vendor — you can't book venues.</p>
+                        <a href="{{ route('venues.index') }}"
+                            class="inline-block w-full bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-300 transition">
+                            Manage My Venues
+                        </a>
+                    </div>
+
                     @else
                     <div class="mt-4 border-t pt-4 text-center">
                         <p class="text-xs text-gray-500 mb-2">Log in to book this venue</p>
@@ -74,7 +84,8 @@
                             Log in to Book
                         </a>
                     </div>
-                    @endauth
+                    @endif
+
 
                 </div>
 

@@ -22,9 +22,18 @@ class BookingController extends Controller
     }
 
     // Store a new booking request submitted by a customer
-    // Accepts $venue directly from route binding: /venues/{venue}/book
     public function store(Request $request, Venue $venue)
     {
+        // Only customers can book venues
+        if (Auth::user()->role !== 'customer') {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Only customers can request bookings.'
+                ], 403);
+            }
+            return back()->withErrors(['booking_error' => 'Only customers can request bookings.']);
+        }
+
         $request->validate([
             'start_date' => 'required|date',
             'end_date'   => 'required|date|after_or_equal:start_date',
@@ -43,7 +52,6 @@ class BookingController extends Controller
             ->exists();
 
         if ($hasOverlap) {
-            // Return JSON error for AJAX
             return response()->json([
                 'message' => 'This venue is already booked or has a pending request for the selected dates.'
             ], 422);
@@ -66,13 +74,11 @@ class BookingController extends Controller
             'status'      => 'pending',
         ]);
 
-        // Return JSON success for AJAX
         return response()->json([
             'message'  => 'Booking request submitted successfully!',
             'redirect' => route('bookings.index')
         ], 200);
     }
-
 
     // View all incoming requests for the vendor's venues
     public function vendorBookings()
@@ -110,12 +116,10 @@ class BookingController extends Controller
     // Cancel a customer's own pending booking
     public function destroy(Booking $booking)
     {
-        // Only the booking owner can cancel
         if ($booking->user_id !== Auth::id()) {
             abort(403);
         }
 
-        // Only pending bookings can be cancelled
         if ($booking->status !== 'pending') {
             return back()->with('error', 'Only pending bookings can be cancelled.');
         }

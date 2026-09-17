@@ -68,9 +68,10 @@
 
                 {{-- Right Column: Booking Form --}}
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-fit">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Reserve Venue</h3>
 
-                    {{-- Error banner removed — errors now show inline below the button --}}
+                    @if (auth()->check() && auth()->user()->role === 'customer')
+                    {{-- CUSTOMER: Show booking form --}}
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Reserve Venue</h3>
 
                     <form class="booking-form space-y-4" data-venue-id="{{ $venue->id }}">
                         @csrf
@@ -110,10 +111,39 @@
                             <span class="btn-text">Request Booking</span>
                         </button>
 
-                        {{-- Inline error / success messages --}}
                         <div class="error-box hidden p-3 bg-red-100 border border-red-400 text-red-700 text-xs rounded-md"></div>
                         <div class="success-box hidden p-3 bg-green-100 border border-green-400 text-green-700 text-xs rounded-md"></div>
                     </form>
+
+                    @elseif (auth()->check() && auth()->user()->role === 'vendor')
+                    {{-- VENDOR: Show message --}}
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Vendor View</h3>
+
+                    <div class="text-center py-4">
+                        <p class="text-sm text-gray-500 mb-3">You're a vendor — you can't book venues.</p>
+                        <a href="{{ route('venues.index') }}"
+                            class="inline-block w-full bg-gray-200 text-gray-700 text-sm font-semibold py-2.5 px-4 rounded-md hover:bg-gray-300 transition">
+                            Manage My Venues
+                        </a>
+                    </div>
+
+                    @else
+                    {{-- GUEST: Show login prompt --}}
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Get Started</h3>
+
+                    <div class="text-center py-4">
+                        <p class="text-sm text-gray-500 mb-3">Log in to book this venue</p>
+                        <a href="{{ route('login') }}"
+                            class="inline-block w-full bg-indigo-600 text-white text-sm font-semibold py-2.5 px-4 rounded-md hover:bg-indigo-700 transition mb-2">
+                            Log in to Book
+                        </a>
+                        <a href="{{ route('register') }}"
+                            class="inline-block w-full bg-gray-100 text-gray-700 text-sm font-semibold py-2.5 px-4 rounded-md hover:bg-gray-200 transition">
+                            Create an Account
+                        </a>
+                    </div>
+                    @endif
+
                 </div>
             </div>
 
@@ -175,7 +205,7 @@
         </div>
     </div>
 
-    {{-- Booking AJAX Script --}}
+    {{-- Booking AJAX Script (only runs if a booking form exists on the page) --}}
     <script>
         (function() {
             document.addEventListener('DOMContentLoaded', function() {
@@ -183,7 +213,6 @@
                     form.addEventListener('submit', function(e) {
                         e.preventDefault();
 
-                        const card = form.closest('div');
                         const start = form.querySelector('.start-date').value;
                         const end = form.querySelector('.end-date').value;
                         const errorBox = form.querySelector('.error-box');
@@ -197,7 +226,6 @@
                         errorBox.innerText = '';
                         successBox.innerText = '';
 
-                        // Loading state ON
                         btn.disabled = true;
                         btnText.innerText = 'Checking...';
                         spinner.classList.remove('hidden');
@@ -208,7 +236,7 @@
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}',
                                     'Accept': 'application/json'
                                 },
                                 body: JSON.stringify({
@@ -217,6 +245,18 @@
                                 })
                             })
                             .then(function(response) {
+                                if (response.status === 401) {
+                                    window.location.href = '/login';
+                                    return Promise.reject('Unauthenticated');
+                                }
+                                if (response.status === 403) {
+                                    return response.json().then(function(data) {
+                                        return {
+                                            ok: false,
+                                            data: data
+                                        };
+                                    });
+                                }
                                 return response.json().then(function(data) {
                                     return {
                                         ok: response.ok,
@@ -245,8 +285,10 @@
                                 });
                             })
                             .catch(function(err) {
-                                errorBox.innerText = 'Network error. Please try again.';
-                                errorBox.classList.remove('hidden');
+                                if (err !== 'Unauthenticated') {
+                                    errorBox.innerText = 'Network error. Please try again.';
+                                    errorBox.classList.remove('hidden');
+                                }
                             })
                             .finally(function() {
                                 btn.disabled = false;
