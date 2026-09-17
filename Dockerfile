@@ -3,13 +3,15 @@ FROM php:8.2-apache
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git curl unzip zip \
-    libpng-dev libonig-dev libxml2-dev libpq-dev libzip-dev \
+    libpng-dev libjpeg-dev libfreetype6-dev \
+    libonig-dev libxml2-dev libpq-dev libzip-dev libicu-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install \
-    pdo pdo_pgsql pdo_mysql \
-    mbstring exif pcntl bcmath gd zip intl
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+        pdo pdo_pgsql pdo_mysql \
+        mbstring exif pcntl bcmath gd zip intl
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -22,7 +24,7 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install Node.js 20 (better for modern Vite/Laravel)
+# Install Node.js 20
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -51,5 +53,4 @@ RUN composer dump-autoload --optimize \
 
 EXPOSE 80
 
-# Better: use an entrypoint script instead of putting migrate in CMD
 CMD ["apache2-foreground"]
