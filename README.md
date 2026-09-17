@@ -57,7 +57,7 @@ A full-stack web application built with Laravel where vendors list venues and cu
 ## Setup Instructions
 
 1. Clone the repository:
-   git clone https://github.com/your-username/venue-booking.git
+   git clone  https://github.com/zenopppppp/venue-booking.git 
    cd venue-booking
 
 
